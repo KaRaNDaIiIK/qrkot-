@@ -17,8 +17,6 @@ class CharityProjectBase(BaseModel):
 class CharityProjectCreate(CharityProjectBase):
     """Схема для создания проекта."""
 
-    pass
-
 
 class CharityProjectUpdate(BaseModel):
     """Схема для обновления проекта."""

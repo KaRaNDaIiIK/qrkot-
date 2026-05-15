@@ -16,8 +16,6 @@ class DonationBase(BaseModel):
 class DonationCreate(DonationBase):
     """Схема для создания пожертвования."""
 
-    pass
-
 
 class DonationDB(DonationBase):
     """Схема для ответа."""
@@ -32,7 +30,8 @@ class DonationDB(DonationBase):
 
 
 class DonationShortDB(DonationBase):
-    """Схема для ответа пользователю (без комментария)"""
+    """Схема для ответа пользователю (без комментария)."""
+
     id: int
     create_date: datetime
 
