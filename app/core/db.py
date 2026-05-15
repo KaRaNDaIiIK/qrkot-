@@ -49,6 +49,7 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
 
 class InvestmentBase(CommonMixin, Base):
     """Абстрактная модель для инвестиционных объектов проекта."""
+
     __abstract__ = True
 
     full_amount: Mapped[int] = mapped_column(
