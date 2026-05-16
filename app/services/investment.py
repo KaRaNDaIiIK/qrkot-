@@ -13,29 +13,29 @@ async def invest(
     open_projects = await charity_project_crud.get_open_projects(session)
     donations = await donation_crud.get_not_fully_invested(session)
 
-    p_idx, d_idx = 0, 0
-    p_len = len(open_projects)
-    d_len = len(donations)
+    project_index, donation_index = 0, 0
+    projects_count = len(open_projects)
+    donations_count = len(donations)
 
-    while p_idx < p_len and d_idx < d_len:
-        project = open_projects[p_idx]
-        donation = donations[d_idx]
+    while project_index < projects_count and donation_index < donations_count:
+        project = open_projects[project_index]
+        donation = donations[donation_index]
 
-        needed = project.full_amount - project.invested_amount
-        available = donation.full_amount - donation.invested_amount
-        to_invest = min(needed, available)
+        needed_amount = project.full_amount - project.invested_amount
+        available_amount = donation.full_amount - donation.invested_amount
+        amount_to_invest = min(needed_amount, available_amount)
 
-        project.invested_amount += to_invest
-        donation.invested_amount += to_invest
+        project.invested_amount += amount_to_invest
+        donation.invested_amount += amount_to_invest
 
         if project.invested_amount >= project.full_amount:
             project.fully_invested = True
             project.close_date = datetime.now()
-            p_idx += 1
+            project_index += 1
 
         if donation.invested_amount >= donation.full_amount:
             donation.fully_invested = True
             donation.close_date = datetime.now()
-            d_idx += 1
+            donation_index += 1
 
     await session.commit()

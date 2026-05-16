@@ -1,3 +1,4 @@
+from http import HTTPStatus
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,7 +14,7 @@ async def check_project_name_duplicate(
     project = await charity_project_crud.get_project_by_name(name, session)
     if project is not None:
         raise HTTPException(
-            status_code=400,
+            status_code=HTTPStatus.CONFLICT,
             detail='Проект с таким именем уже существует!'
         )
 
@@ -26,7 +27,7 @@ async def check_project_exists(
     project = await charity_project_crud.get(project_id, session)
     if project is None:
         raise HTTPException(
-            status_code=404,
+            status_code=HTTPStatus.NOT_FOUND,
             detail='Проект не найден!'
         )
     return project
@@ -38,7 +39,7 @@ async def check_project_not_closed(
     """Проверяет, что проект не закрыт."""
     if project.fully_invested:
         raise HTTPException(
-            status_code=400,
+            status_code=HTTPStatus.CONFLICT,
             detail='Нельзя изменять закрытый проект!'
         )
 
@@ -49,13 +50,13 @@ async def check_project_can_be_deleted(
     """Проверяет, что проект можно удалить."""
     if project.fully_invested:
         raise HTTPException(
-            status_code=400,
+            status_code=HTTPStatus.CONFLICT,
             detail='Нельзя удалять закрытый проект!'
         )
 
     if project.invested_amount > 0:
         raise HTTPException(
-            status_code=400,
+            status_code=HTTPStatus.CONFLICT,
             detail='Нельзя удалять проект с уже внесёнными средствами!'
         )
 
@@ -67,6 +68,6 @@ async def check_project_amount_valid(
     """Проверяет, что новое значение не меньше уже внесённой суммы."""
     if full_amount is not None and full_amount < project.invested_amount:
         raise HTTPException(
-            status_code=400,
+            status_code=HTTPStatus.CONFLICT,
             detail='Нельзя установить сумму меньше уже внесённой!'
         )
