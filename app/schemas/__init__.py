@@ -1,14 +1,14 @@
-from .charity_project import (
+from app.schemas.charity_project import (
     CharityProjectCreate,
     CharityProjectDB,
     CharityProjectUpdate,
 )
-from .donation import (
+from app.schemas.donation import (
     DonationCreate,
     DonationDB,
     DonationShortDB,
 )
-from .user import UserCreate
+from app.schemas.user import UserCreate
 
 __all__ = [
     'CharityProjectCreate',

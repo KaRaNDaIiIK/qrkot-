@@ -43,8 +43,8 @@ auth_backend = AuthenticationBackend(
 
 
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
-
     """класс пользователя с валидацией."""
+
     async def validate_password(  # type: ignore
         self,
         password: str,
