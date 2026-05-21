@@ -9,9 +9,9 @@ from app.core.user import (
     current_user,
     current_user_optional,
 )
-from app.crud.donation import donation_crud
+from app.crud import donation_crud
 from app.models import User
-from app.schemas.donation import (
+from app.schemas import (
     DonationCreate,
     DonationDB,
     DonationShortDB,

@@ -1,10 +1,19 @@
-from .charity_project import (  # noqa
+from .charity_project import (
     CharityProjectCreate,
     CharityProjectDB,
     CharityProjectUpdate,
 )
-from .donation import (  # noqa
+from .donation import (
     DonationCreate,
     DonationDB,
     DonationShortDB,
 )
+
+__all__ = [
+    'CharityProjectCreate',
+    'CharityProjectDB',
+    'CharityProjectUpdate',
+    'DonationCreate',
+    'DonationDB',
+    'DonationShortDB',
+]
