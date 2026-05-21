@@ -1,6 +1,6 @@
-import uvicorn
 from contextlib import asynccontextmanager
 
+import uvicorn
 from fastapi import FastAPI
 
 from app.api.routers import main_router
