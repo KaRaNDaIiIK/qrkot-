@@ -7,4 +7,5 @@ from app.core.db import Base
 
 class User(SQLAlchemyBaseUserTable[int], Base):
     """Модель пользователя"""
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)  # type: ignore

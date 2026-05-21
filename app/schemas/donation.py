@@ -16,8 +16,6 @@ class DonationBase(BaseModel):
 class DonationCreate(DonationBase):
     """Схема для создания пожертвования."""
 
-    pass
-
 
 class DonationDB(DonationBase):
     """Схема для ответа."""

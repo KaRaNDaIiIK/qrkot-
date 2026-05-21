@@ -1,5 +1,6 @@
 import uvicorn
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
 from app.api.routers import main_router
