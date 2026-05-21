@@ -10,6 +10,7 @@ from app.schemas.donation import (
 )
 from app.schemas.user import UserCreate
 
+
 __all__ = [
     'CharityProjectCreate',
     'CharityProjectDB',
