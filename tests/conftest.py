@@ -3,25 +3,14 @@ from pathlib import Path
 
 import pytest
 import pytest_asyncio
-from fastapi.testclient import TestClient
 from mixer.backend.sqlalchemy import Mixer
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-
-try:
-    from app.core.config import Settings
-except Exception as error:
-    raise AssertionError(
-        'При импорте настроек приложения `Settings` из модуля '
-        '`app.core.config` возникло исключение:\n'
-        f'{type(error).__name__}: {error}.'
-    )
-
 try:
     from app.main import app  # noqa
-except Exception as error:
+except (NameError, ImportError) as error:
     raise AssertionError(
         'При импорте объекта приложения `app` из модуля `app.main` '
         f'возникло исключение:\n{type(error).__name__}: {error}.'
@@ -29,10 +18,28 @@ except Exception as error:
 
 try:
     from app.core.db import Base, get_async_session  # noqa
-except Exception as error:
+except (NameError, ImportError) as error:
     raise AssertionError(
         'При импорте объектов `Base, get_async_session` '
         'из модуля `app.core.db` возникло исключение:\n'
+        f'{type(error).__name__}: {error}.'
+    )
+
+try:
+    from app.core.user import current_superuser, current_user  # noqa
+except (NameError, ImportError) as error:
+    raise AssertionError(
+        'При импорте объектов `current_superuser, current_user` '
+        'из модуля `app.core.user` возникло исключение:\n'
+        f'{type(error).__name__}: {error}.'
+    )
+
+try:
+    from app.schemas.user import UserCreate  # noqa
+except (NameError, ImportError) as error:
+    raise AssertionError(
+        'При импорте схемы `UserCreate` из модуля `app.schemas.user` '
+        'возникло исключение:\n'
         f'{type(error).__name__}: {error}.'
     )
 
@@ -40,6 +47,7 @@ except Exception as error:
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 
 pytest_plugins = [
+    'fixtures.user',
     'fixtures.data',
 ]
 
@@ -85,7 +93,7 @@ def charity_project_model():
         )
     ]
     assert charity_project_model, (
-        'Убедитесь, что создали модель `CharityProject`.'
+        'Убедитесь, что в проекте создана модель `CharityProject`.'
     )
     return charity_project_model[0]
 
@@ -97,12 +105,6 @@ async def init_db():
     yield
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
-
-
-@pytest.fixture
-def test_client():
-    with TestClient(app) as client:
-        yield client
 
 
 @pytest_asyncio.fixture

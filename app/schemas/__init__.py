@@ -3,4 +3,8 @@ from .charity_project import (  # noqa
     CharityProjectDB,
     CharityProjectUpdate,
 )
-from .donation import DonationCreate, DonationDB  # noqa
+from .donation import (  # noqa
+    DonationCreate,
+    DonationDB,
+    DonationShortDB,
+)

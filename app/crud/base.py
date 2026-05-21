@@ -3,6 +3,8 @@ from typing import Any, Sequence
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models import User
+
 
 class CRUDBase:
     """Базовый класс для CRUD операций."""
@@ -37,9 +39,12 @@ class CRUDBase:
         self,
         obj_in,
         session: AsyncSession,
+        user: User | None = None
     ):
         """Универсальный метод для добавления записи в базу."""
         obj_in_data = obj_in.model_dump()
+        if user is not None:
+            obj_in_data['user_id'] = user.id
         db_obj = self.model(**obj_in_data)
         session.add(db_obj)
         await session.commit()

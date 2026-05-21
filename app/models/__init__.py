@@ -1,5 +1,6 @@
-from .charity_project import CharityProject  # noqa
-from .donation import Donation  # noqa
+from .charity_project import CharityProject
+from .donation import Donation
+from .user import User
 
 
-__all__ = ['CharityProject', 'Donation']
+__all__ = ['CharityProject', 'Donation', 'User']

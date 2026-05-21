@@ -15,17 +15,19 @@ PROJECT_DETAILS_URL = PROJECTS_URL + '{project_id}'
     ],
     ids=['empty', 'too_long', 'None'],
 )
-def test_create_invalid_project_name(test_client, invalid_name, project_json):
+def test_create_invalid_project_name(
+        superuser_client, invalid_name, project_json
+):
     project_json['name'] = invalid_name
-    response = test_client.post(
+    response = superuser_client.post(
         PROJECTS_URL,
         json=project_json,
     )
     assert response.status_code == 422, (
-        f'Убедитесь, что POST-запрос к эндпоинту `{PROJECTS_URL}` с пустым '
-        'полем `name` или со значением для этого поля длиннее 100 '
-        'символов не проходит валидацию (возвращает ответ со статус-кодом '
-        '422).'
+        'Убедитесь, что POST-запрос суперпользователя к эндпоинту '
+        f'`{PROJECTS_URL}` с пустым полем `name` или со значением для этого '
+        'поля длиннее 100 символов не проходит валидацию (возвращает ответ со '
+        'статус-кодом 422).'
     )
 
 
@@ -35,18 +37,18 @@ def test_create_invalid_project_name(test_client, invalid_name, project_json):
         None,
     ]
 )
-def test_create_project_no_desc(test_client, description, project_json):
+def test_create_project_no_desc(superuser_client, description, project_json):
     project_json['description'] = description
-    response = test_client.post(
+    response = superuser_client.post(
         PROJECTS_URL,
         json=project_json
     )
     assert (
         response.status_code == 422
     ), (
-        f'Убедитесь, что POST-запрос к эндпоинту `{PROJECTS_URL}` с пустым '
-        'полем `description` не проходит валидацию (возвращает ответ со '
-        'статус-кодом 422).'
+        'Убедитесь, что POST-запрос суперпользователя к эндпоинту '
+        f'`{PROJECTS_URL}` с пустым полем `description` не проходит валидацию '
+        '(возвращает ответ со статус-кодом 422).'
     )
 
 
@@ -56,18 +58,19 @@ def test_create_project_no_desc(test_client, description, project_json):
     {'id': 5000},
 ])
 def test_create_project_with_autofilling_fields(
-        test_client, forbidden_key, project_json
+        superuser_client, forbidden_key, project_json
 ):
     project_json.update(forbidden_key)
-    response = test_client.post(
+    response = superuser_client.post(
         PROJECTS_URL,
         json=project_json
     )
     assert response.status_code == 422, (
-        'Если в POST-запросе на создание целевого проекта есть поля, не '
-        'указанные в спецификации - должен вернуться ответ со статус-кодом '
-        '422.\n'
-        f'Был отправлен запрос с полем `{list(forbidden_key.keys())[0]}`. '
+        'Если в POST-запросе суперпользователя на создание целевого проекта '
+        'есть поля, не указанные в спецификации - должен вернуться ответ со '
+        'статус-кодом 422.\n'
+        'При тестировании кода был отправлен запрос с полем '
+        f'`{list(forbidden_key.keys())[0]}`. '
         f'Получен код ответа {response.status_code}.'
     )
 
@@ -84,35 +87,35 @@ def test_create_project_with_autofilling_fields(
     ],
 )
 def test_create_invalid_full_amount_value(
-        test_client, invalid_full_amount, project_json
+        superuser_client, invalid_full_amount, project_json
 ):
     project_json['full_amount'] = invalid_full_amount
-    response = test_client.post(PROJECTS_URL, json=project_json)
+    response = superuser_client.post(PROJECTS_URL, json=project_json)
     assert response.status_code == 422, (
         f'Убедитесь, что в POST-запросе к эндпоинту `{PROJECTS_URL}` поле '
         '`full_amount` (требуемая сумма проекта) принимает только '
         'целочисленные положительные значения.\n'
-        'При запросе, где значением поля `full_amount` было '
+        'При запросе суперпользователя, где значением поля `full_amount` было '
         f'`{invalid_full_amount}`, вернулся ответ со статус-кодом '
         f'{response.status_code}. Ожидаемый код ответа - 422.'
     )
 
 
 @pytest.mark.usefixtures('charity_project')
-def test_get_charity_project(test_client):
-    response = test_client.get(PROJECTS_URL)
+def test_get_charity_project(user_client):
+    response = user_client.get(PROJECTS_URL)
     assert response.status_code == 200, (
-        f'GET-запрос к эндпоинту `{PROJECTS_URL}` должен возвращать '
-        'статус-код 200.'
+        f'GET-запрос обычного пользователя к эндпоинту `{PROJECTS_URL}` '
+        'должен возвращать статус-код 200.'
     )
     response_data = response.json()
     assert isinstance(response_data, list), (
-        f'GET-запрос к эндпоинту `{PROJECTS_URL}` должен возвращать '
-        'ответ, содержащий список.'
+        f'В ответе на GET-запрос к эндпоинту `{PROJECTS_URL}` должен '
+        'возвращаться список.'
     )
     assert len(response_data) == 1, (
         f'Убедитесь, что GET-запрос к эндпоинту `{PROJECTS_URL}` возвращает '
-        'список существующих проектов.'
+        'список всех существующих проектов.'
     )
     first_elem = response_data[0]
     expected_keys = {
@@ -126,8 +129,8 @@ def test_get_charity_project(test_client):
     }
     missing_keys = expected_keys - first_elem.keys()
     assert not missing_keys, (
-        'В данных о проектах, содержащихся в ответе на GET-запрос к '
-        f'эндпоинту `{PROJECTS_URL}`, не хватает следующих ключей: '
+        f'В ответе на GET-запрос к эндпоинту `{PROJECTS_URL}` '
+        'в описании объектов не хватает следующих ключей: '
         f'`{"`, `".join(missing_keys)}`'
     )
     response_data[0].pop('close_date', None)
@@ -148,8 +151,8 @@ def test_get_charity_project(test_client):
 
 
 @pytest.mark.usefixtures('charity_project', 'charity_project_nunchaku')
-def test_get_all_charity_project(test_client):
-    response = test_client.get(PROJECTS_URL)
+def test_get_all_charity_project(user_client):
+    response = user_client.get(PROJECTS_URL)
     assert response.status_code == 200, (
         'При запросе перечня проектов должен возвращаться статус-код 200.'
     )
@@ -158,7 +161,7 @@ def test_get_all_charity_project(test_client):
         'При запросе перечня проектов должен возвращаться объект типа `list`.'
     )
     assert len(response_data) == 2, (
-        f'Убедитесь, что при ответ на GET-запрос к эндпоинту `{PROJECTS_URL}` '
+        f'Убедитесь, что ответ на GET-запрос к эндпоинту `{PROJECTS_URL}` '
         'содержит данные всех существующих проектов.'
     )
     first_elem = response_data[0]
@@ -202,11 +205,12 @@ def test_get_all_charity_project(test_client):
     )
 
 
-def test_create_charity_project(test_client, project_json):
-    response = test_client.post(PROJECTS_URL, json=project_json)
+def test_create_charity_project(superuser_client, project_json):
+    response = superuser_client.post(PROJECTS_URL, json=project_json)
     assert response.status_code == 200, (
-        'Убедитесь, что POST-запрос с корректными данными к эндпоинту '
-        f'`{PROJECTS_URL}` возвращает ответ со статус-кодом 200.'
+        'Убедитесь, что POST-запрос с корректными данными, отправленный '
+        f'суперпользователем к эндпоинту `{PROJECTS_URL}`, возвращает ответ '
+        'со статус-кодом 200.'
     )
     data = response.json()
     expected_keys = {
@@ -220,8 +224,9 @@ def test_create_charity_project(test_client, project_json):
     }
     missing_keys = expected_keys - data.keys()
     assert not missing_keys, (
-        f'В ответе на корректный POST-запрос к эндпоинту `{PROJECTS_URL}` '
-        f'не хватает следующих ключей: `{"`, `".join(missing_keys)}`'
+        'В ответе на корректный POST-запрос суперпользователя к эндпоинту '
+        f'`{PROJECTS_URL}` не хватает следующих ключей: '
+        f'`{"`, `".join(missing_keys)}`'
     )
     data.pop('create_date')
     data.pop('close_date', None)
@@ -233,8 +238,8 @@ def test_create_charity_project(test_client, project_json):
         }
     )
     assert data == project_json, (
-        f'При POST-запросе к эндпоинту `{PROJECTS_URL}` тело ответа API '
-        'отличается от ожидаемого. Проверьте структуру ответа '
+        f'При POST-запросе суперпользователя к эндпоинту `{PROJECTS_URL}` '
+        'тело ответа API отличается от ожидаемого. Проверьте структуру ответа '
         'и убедитесь, что пустые поля не выводятся в ответе.'
     )
 
@@ -248,28 +253,37 @@ def test_create_charity_project(test_client, project_json):
     ],
 )
 def test_create_charity_project_with_missing_key(
-        missing_key, test_client, project_json
+        missing_key, superuser_client, project_json
 ):
     project_json.pop(missing_key)
-    response = test_client.post(PROJECTS_URL, json=project_json)
+    response = superuser_client.post(PROJECTS_URL, json=project_json)
     assert response.status_code == 422, (
-        f'Убедитесь, что если в POST-запросе к эндпоинту `{PROJECTS_URL}` '
-        f'отсутствует обязательное поле `{missing_key}`, то возвращается '
-        'ответ со статус-кодом 422.'
+        'Убедитесь, что если в POST-запросе суперпользователя к эндпоинту '
+        f'`{PROJECTS_URL}` отсутствует обязательное поле `{missing_key}`, то '
+        'возвращается ответ со статус-кодом 422.'
     )
     data = response.json()
     assert 'detail' in data, (
-        f'В ответе на некорректный POST-запрос к эндпоинту `{PROJECTS_URL}` '
-        'должно содержаться поле `detail`.'
+        'В ответе на некорректный POST-запрос суперпользователя к эндпоинту '
+        f'`{PROJECTS_URL}` должно содержаться поле `detail`.'
     )
 
 
-def test_delete_charity_project(test_client, charity_project):
-    response = test_client.delete(
+def test_delete_project_usual_user(user_client, charity_project):
+    response = user_client.delete(
+        PROJECT_DETAILS_URL.format(project_id=charity_project.id))
+    assert response.status_code == 403, (
+        f'DELETE-запрос к эндпоинту `{PROJECT_DETAILS_URL}` от пользователя, '
+        'не являющегося суперюзером, должен вернуть ответ со статус-кодом 403.'
+    )
+
+
+def test_delete_charity_project(superuser_client, charity_project):
+    response = superuser_client.delete(
         PROJECT_DETAILS_URL.format(project_id=charity_project.id))
     assert response.status_code == 200, (
-        f'DELETE-запрос к эндпоинту `{PROJECT_DETAILS_URL}` должен вернуть '
-        'ответ со статус-кодом 200.'
+        'Корректный DELETE-запрос суперпользователя к эндпоинту '
+        f'`{PROJECT_DETAILS_URL}` должен вернуть ответ со статус-кодом 200.'
     )
     data = response.json()
     expected_keys = {
@@ -283,22 +297,23 @@ def test_delete_charity_project(test_client, charity_project):
     }
     missing_keys = expected_keys - data.keys()
     assert not missing_keys, (
-        f'В ответе на DELETE-запрос к эндпоинту `{PROJECT_DETAILS_URL}` не '
-        f'хватает следующих ключей: `{"`, `".join(missing_keys)}`'
+        'В ответе на DELETE-запрос суперпользователя к эндпоинту '
+        f'`{PROJECT_DETAILS_URL}` не хватает следующих ключей: '
+        f'`{"`, `".join(missing_keys)}`'
     )
 
 
-def test_delete_charity_project_invalid_id(test_client):
-    response = test_client.delete(
-        PROJECT_DETAILS_URL.format(project_id=99984))
+def test_delete_charity_project_invalid_id(superuser_client):
+    response = superuser_client.delete(
+        PROJECT_DETAILS_URL.format(project_id=99983))
     assert response.status_code == 404, (
-        f'Если в DELETE-запросе к эндпоинту `{PROJECT_DETAILS_URL}` '
-        'передан id несуществующего проекта - должен вернуться ответ со '
-        'статус-кодом 404.'
+        'Если в DELETE-запросе суперпользователя к эндпоинту '
+        f'`{PROJECT_DETAILS_URL}` передан id несуществующего проекта - должен '
+        'вернуться ответ со статус-кодом 404.'
     )
     data = response.json()
     assert 'detail' in data, (
-        'Ответ на некорректный DELETE-запрос к эндпоинту '
+        'Ответ на некорректный DELETE-запрос суперпользователя к эндпоинту '
         f'`{PROJECT_DETAILS_URL}` должен содержать поле `detail`'
     )
 
@@ -345,9 +360,9 @@ def test_delete_charity_project_invalid_id(test_client):
     ],
 )
 def test_update_charity_project(
-        test_client, charity_project, json_data, expected_data
+        superuser_client, charity_project, json_data, expected_data
 ):
-    response = test_client.patch(
+    response = superuser_client.patch(
         PROJECT_DETAILS_URL.format(project_id=charity_project.id),
         json=json_data
     )
@@ -380,14 +395,14 @@ def test_update_charity_project(
 
 @pytest.mark.parametrize('shift', [0, 1])
 def test_update_charity_project_full_amount_ge_invested_amount(
-        test_client, charity_project_little_invested, shift
+        superuser_client, charity_project_little_invested, shift
 ):
     json_data = {
         'full_amount': (
             charity_project_little_invested.invested_amount + shift
         )
     }
-    response = test_client.patch(
+    response = superuser_client.patch(
         PROJECT_DETAILS_URL.format(
             project_id=charity_project_little_invested.id),
         json=json_data,
@@ -395,29 +410,29 @@ def test_update_charity_project_full_amount_ge_invested_amount(
     assert response.status_code == 200, (
         'Убедитесь, что при редактировании проекта разрешено устанавливать '
         'требуемую сумму больше или равную внесённой. Соответствующий '
-        f'PATCH-запрос к эндпоинту `{PROJECT_DETAILS_URL}` должен вернуть '
-        'ответ со статус-кодом 200.'
+        f'PATCH-запрос суперпользователя к эндпоинту `{PROJECT_DETAILS_URL}` '
+        'должен вернуть ответ со статус-кодом 200.'
     )
     response_data = response.json()
     assert response_data.get('full_amount') == json_data['full_amount'], (
-        'При редактировании проекта должно быть разрешено устанавливать '
+        'Убедитесь, что при редактировании проекта разрешено устанавливать '
         'требуемую сумму больше или равную внесённой. '
-        'Убедитесь, что корректный PATCH-запрос к эндпоинту '
+        'Убедитесь, что корректный PATCH-запрос суперпользователя к эндпоинту '
         f'`{PROJECT_DETAILS_URL}` изменяет значение поля `full_amount`.'
     )
     if not shift:
         assert response_data.get('fully_invested'), (
-            'Если при PACH-запросе на редактирование целевого проекта '
-            'значение поля `full_amount` будет установлено равным внесённой '
-            'сумме, то в ответе на запрос должно быть передано поле '
-            '`fully_invested` со значением True.'
+            'Если при PACH-запросе суперпользователя на редактирование '
+            'целевого проекта значение поля `full_amount` будет установлено '
+            'равным внесённой сумме, то в ответе на запрос должно быть '
+            'передано поле `fully_invested` со значением True.'
         )
         project_closed_date = response_data.get('close_date')
         assert project_closed_date, (
-            'Если при PACH-запросе на редактирование целевого проекта '
-            'значение поля `full_amount` будет установлено равным внесённой '
-            'сумме, то в ответе на запрос должно быть передано поле '
-            '`close_date` с датой закрытия проекта.'
+            'Если при PACH-запросе суперпользователя на редактирование '
+            'целевого проекта значение поля `full_amount` будет установлено '
+            'равным внесённой сумме, то в ответе на запрос должно быть '
+            'передано поле `close_date` с датой закрытия проекта.'
         )
 
 
@@ -430,16 +445,17 @@ def test_update_charity_project_full_amount_ge_invested_amount(
     ],
 )
 def test_update_charity_project_invalid(
-        test_client, charity_project, json_data
+        superuser_client, charity_project, json_data
 ):
-    response = test_client.patch(
+    response = superuser_client.patch(
         PROJECT_DETAILS_URL.format(project_id=charity_project.id),
         json=json_data
     )
     assert response.status_code == 422, (
         'Убедитесь, что при редактировании проекта запрещено назначать пустое '
-        'имя, описание или цель проекта. Подобный PATCH-запрос к эндпоинту '
-        f'`{PROJECT_DETAILS_URL}` должен вернуть статус-код 422.'
+        'имя, описание или требуемую сумму. Подобный PATCH-запрос '
+        f'суперпользователя к эндпоинту `{PROJECT_DETAILS_URL}` должен '
+        'вернуть статус-код 422.'
     )
 
 
@@ -453,9 +469,9 @@ def test_update_charity_project_invalid(
     ],
 )
 def test_update_charity_with_unexpected_fields(
-        test_client, charity_project, json_data
+        superuser_client, charity_project, json_data
 ):
-    response = test_client.patch(
+    response = superuser_client.patch(
         PROJECT_DETAILS_URL.format(project_id=charity_project.id),
         json=json_data
     )
@@ -463,42 +479,43 @@ def test_update_charity_with_unexpected_fields(
         'Убедитесь, что при редактировании проекта невозможно изменить '
         'значения полей, редактирование которых не предусмотрено '
         'спецификацией к API. '
-        f'Если в PATCH-запросе к эндпоинту `{PROJECT_DETAILS_URL}` переданы '
-        'значения для таких полей - должен вернуться ответ со статус-кодом '
-        '422.'
+        'Если в PATCH-запросе суперпользователя к эндпоинту '
+        f'`{PROJECT_DETAILS_URL}` переданы значения для таких полей - должен '
+        'вернуться ответ со статус-кодом 422.'
     )
 
 
 def test_update_charity_project_same_name(
-        test_client, charity_project, charity_project_nunchaku
+        superuser_client, charity_project, charity_project_nunchaku
 ):
-    response = test_client.patch(
+    response = superuser_client.patch(
         PROJECT_DETAILS_URL.format(project_id=charity_project.id),
         json={
             'name': charity_project_nunchaku.name,
         }
     )
     assert response.status_code == 400, (
-        f'Если PATCH-запрос к эндпоинту `{PROJECT_DETAILS_URL}` присваивает '
-        'проекту название другого существующего проекта - должен вернуться '
-        'ответ со статус-кодом 400.'
+        'Если PATCH-запрос суперпользователя к эндпоинту '
+        f'`{PROJECT_DETAILS_URL}` присваивает проекту название другого '
+        'существующего проекта - должен вернуться ответ со статус-кодом 400.'
     )
     assert 'detail' in response.json(), (
-        f'Если PATCH-запрос к эндпоинту `{PROJECT_DETAILS_URL}` присваивает '
-        'проекту название другого существующего проекта - в ответе должен '
-        'быть ключ `detail` с описанием ошибки.'
+        'Если PATCH-запрос суперпользователя к эндпоинту '
+        f'`{PROJECT_DETAILS_URL}` присваивает проекту название другого '
+        'существующего проекта - в ответе должен быть ключ `detail` с '
+        'описанием ошибки.'
     )
 
 
 @pytest.mark.parametrize('full_amount', [0, 5])
 def test_update_charity_project_full_amount_smaller_already_invested(
-        test_client, charity_project_little_invested, full_amount
+        superuser_client, charity_project_little_invested, full_amount
 ):
     full_amount = (
         full_amount if not full_amount
         else charity_project_little_invested.invested_amount - full_amount
     )
-    response = test_client.patch(
+    response = superuser_client.patch(
         PROJECT_DETAILS_URL.format(
             project_id=charity_project_little_invested.id),
         json={'full_amount': full_amount}
@@ -509,10 +526,38 @@ def test_update_charity_project_full_amount_smaller_already_invested(
     )
 
 
+def test_create_charity_project_usual_user(user_client, project_json):
+    response = user_client.post(PROJECTS_URL, json=project_json)
+    assert response.status_code == 403, (
+        f'Если POST-запрос к эндпоинту `{PROJECTS_URL}` отправлен не '
+        'суперпользователем - должен вернутся ответ со статус-кодом 403.'
+    )
+    assert 'detail' in response.json(), (
+        f'Если POST-запрос к эндпоинту `{PROJECTS_URL}` отправлен не '
+        'суперпользователем - в ответе на запрос должен быть ключ `detail`.'
+    )
+
+
+def test_patch_charity_project_usual_user(user_client, charity_project):
+    response = user_client.patch(
+        PROJECT_DETAILS_URL.format(project_id=charity_project.id),
+        json={'full_amount': 1000}
+    )
+    assert response.status_code == 403, (
+        'PATCH-запрос пользователя, не являющегося суперюзером, к эндпоинту '
+        f'`{PROJECT_DETAILS_URL}` должен вернуть статус-код 403.'
+    )
+    data = response.json()
+    assert 'detail' in data, (
+        'Ответ на PATCH-запрос пользователя, не являющегося суперюзером, к '
+        f'эндпоинту `{PROJECT_DETAILS_URL}` должен содержать ключ `detail`.'
+    )
+
+
 def test_patch_charity_project_fully_invested(
-        test_client, small_fully_invested_charity_project,
+        superuser_client, small_fully_invested_charity_project,
 ):
-    response = test_client.patch(
+    response = superuser_client.patch(
         PROJECT_DETAILS_URL.format(
             project_id=small_fully_invested_charity_project.id),
         json={'full_amount': 10}
@@ -530,30 +575,31 @@ def test_patch_charity_project_fully_invested(
     )
 
 
-def test_patch_charity_project_invalid_id(test_client):
-    response = test_client.patch(
-        PROJECT_DETAILS_URL.format(project_id=99984),
+def test_patch_charity_project_invalid_id(superuser_client):
+    response = superuser_client.patch(
+        PROJECT_DETAILS_URL.format(project_id=99987),
         json={'full_amount': 10}
     )
     assert response.status_code == 404, (
-        f'Если в PATCH-запросе к эндпоинту `{PROJECT_DETAILS_URL}` передан id '
-        'несуществующего проекта - должен вернуться ответ со статус-кодом 404.'
+        'Если в PATCH-запросе суперпользователя к эндпоинту '
+        f'`{PROJECT_DETAILS_URL}` передан id несуществующего проекта - должен '
+        'вернуться ответ со статус-кодом 404.'
     )
     data = response.json()
     assert 'detail' in data, (
-        'Ответ на некорректный PATCH-запрос к эндпоинту '
+        'Ответ на некорректный PATCH-запрос суперпользователя к эндпоинту '
         f'`{PROJECT_DETAILS_URL}` должен содержать поле `detail`'
     )
 
 
 def test_create_charity_project_same_name(
-        test_client, charity_project, project_json
+        superuser_client, charity_project, project_json
 ):
     project_json['name'] = charity_project.name
-    response = test_client.post(PROJECTS_URL, json=project_json)
+    response = superuser_client.post(PROJECTS_URL, json=project_json)
     common_messege_part = (
-        f'POST-запрос к эндпоинту `{PROJECTS_URL}`, содержащий неуникальное '
-        'значение для поля `name`,'
+        f'POST-запрос суперпользователя к эндпоинту `{PROJECTS_URL}`, '
+        'содержащий неуникальное значение для поля `name`,'
     )
     assert response.status_code == 400, (
         f'{common_messege_part} должен вернуть статус-код 400.'
@@ -564,10 +610,12 @@ def test_create_charity_project_same_name(
     )
 
 
-def test_create_charity_project_diff_time(test_client, project_json):
-    response_chimichangs = test_client.post(PROJECTS_URL, json=project_json)
+def test_create_charity_project_diff_time(superuser_client, project_json):
+    response_chimichangs = (
+        superuser_client.post(PROJECTS_URL, json=project_json)
+    )
     time.sleep(0.01)
-    response_nunchaku = test_client.post(
+    response_nunchaku = superuser_client.post(
         PROJECTS_URL,
         json={
             'name': 'nunchaku',
@@ -584,10 +632,12 @@ def test_create_charity_project_diff_time(test_client, project_json):
     )
 
 
-def test_donation_exist_project_create(test_client, donation, project_json):
+def test_donation_exist_project_create(
+        superuser_client, donation, project_json
+):
     not_invested_ammount = donation.full_amount - donation.invested_amount
     project_json['full_amount'] = not_invested_ammount
-    response = test_client.post(PROJECTS_URL, json=project_json)
+    response = superuser_client.post(PROJECTS_URL, json=project_json)
     data = response.json()
     common_assert_message_part = (
         'Если при создании проекта существуют нераспределённые пожертвования '
@@ -596,54 +646,90 @@ def test_donation_exist_project_create(test_client, donation, project_json):
     )
     assert data['fully_invested'], (
         f'{common_assert_message_part} Убедитесь, что значением поля '
-        '`fully_invested` в ответе на POST-запрос к эндпоинту '
-        f'`{PROJECTS_URL}` будет `True`.'
+        '`fully_invested` в ответе на POST-запрос суперпользователя к '
+        f'эндпоинту `{PROJECTS_URL}` будет `True`.'
     )
     assert 'close_date' in data, (
         f'{common_assert_message_part} Убедитесь, что в ответе на '
-        f'POST-запрос к эндпоинту `{PROJECTS_URL}` есть поле `close_date`.'
+        f'POST-запрос суперпользователя к эндпоинту `{PROJECTS_URL}` есть '
+        'поле `close_date`.'
     )
     assert data['close_date'] is not None, (
         f'{common_assert_message_part} Убедитесь, что в ответе на '
-        f'POST-запрос к эндпоинту `{PROJECTS_URL}` есть поле `close_date`, '
-        'содержащее время закрытия проекта.'
+        f'POST-запрос суперпользователя к эндпоинту `{PROJECTS_URL}` есть '
+        'поле `close_date`, содержащее время закрытия проекта.'
     )
 
 
 def test_delete_charity_project_already_invested(
-        test_client, charity_project_little_invested
+        superuser_client, charity_project_little_invested
 ):
-    response = test_client.delete(
+    response = superuser_client.delete(
         PROJECT_DETAILS_URL.format(
             project_id=charity_project_little_invested.id)
     )
     assert response.status_code == 400, (
         'Убедитесь, что запрещено удаление проектов, в которые уже '
-        'внесены средства. DELETE-запрос к эндпоинту '
+        'внесены средства. DELETE-запрос суперпользователя к эндпоинту '
         f'`{PROJECT_DETAILS_URL}` на удаление такого проекта '
         'должен вернуть ответ со статус-кодом 400.'
     )
     assert 'detail' in response.json(), (
         'Убедитесь, что запрещено удаление проектов, в которые уже '
-        'внесены средства. В ответе на DELETE-запрос к эндпоинту '
-        f'`{PROJECT_DETAILS_URL}` на удаление такого проекта '
+        'внесены средства. В ответе на DELETE-запрос суперпользователя к '
+        f'эндпоинту `{PROJECT_DETAILS_URL}` на удаление такого проекта '
         'должен быть ключ `detail` с описанием ошибки.'
     )
 
 
 def test_delete_charity_project_already_closed(
-        test_client, closed_charity_project
+        superuser_client, closed_charity_project
 ):
-    response = test_client.delete(
+    response = superuser_client.delete(
         PROJECT_DETAILS_URL.format(project_id=closed_charity_project.id)
     )
     assert response.status_code == 400, (
         'Убедитесь, что удаление закрытых проектов запрещено. DELETE-запрос '
-        f'к эндпоинту `{PROJECT_DETAILS_URL}` на удаление закрытого проекта '
-        'должен вернуть ответ со статус-кодом 400.'
+        f'суперпользователя к эндпоинту `{PROJECT_DETAILS_URL}` на удаление '
+        'закрытого проекта должен вернуть ответ со статус-кодом 400.'
     )
     assert 'detail' in response.json(), (
         'Убедитесь, что удаление закрытых проектов запрещено. Ответ на '
-        f'DELETE-запрос к эндпоинту `{PROJECT_DETAILS_URL}` должен содержать '
-        'ключ `detail` с описанием ошибки.'
+        f'DELETE-запрос суперпользователя к эндпоинту `{PROJECT_DETAILS_URL}` '
+        'должен содержать ключ `detail` с описанием ошибки.'
+    )
+
+
+@pytest.mark.usefixtures('charity_project', 'charity_project_nunchaku')
+def test_get_all_charity_project_not_auth_user(test_client):
+    response = test_client.get(PROJECTS_URL)
+    assert response.status_code == 200, (
+        'GET-запрос незарегистрированного пользователя к эндпоинту '
+        f'`{PROJECTS_URL}` должен вернуть ответ со статус-кодом 200.'
+    )
+    data = response.json()
+    [project.pop('close_date', None) for project in data]
+    assert sorted(data, key=lambda x: x['id']) == [
+        {
+            'create_date': '2010-10-10T00:00:00',
+            'description': 'Huge fan of chimichangas. Wanna buy a lot',
+            'full_amount': 1000000,
+            'fully_invested': False,
+            'id': 1,
+            'invested_amount': 0,
+            'name': 'chimichangas4life'
+        },
+        {
+            'create_date': '2010-10-10T00:00:00',
+            'description': 'Nunchaku is better',
+            'full_amount': 5000000,
+            'fully_invested': False,
+            'id': 2,
+            'invested_amount': 0,
+            'name': 'nunchaku'
+        }
+    ], (
+        'Убедитесь, что в ответ на GET-запрос незарегистрированного '
+        f'пользователя к эндпоинту `{PROJECTS_URL}` возвращается список '
+        'существующих проектов.'
     )

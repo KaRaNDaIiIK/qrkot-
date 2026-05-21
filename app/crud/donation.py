@@ -20,5 +20,15 @@ class CRUDDonation(CRUDBase):
         result = await session.execute(query)
         return list(result.scalars().all())
 
+    async def get_by_user(
+        self,
+        session: AsyncSession,
+        user_id: int,
+    ) -> list[Donation]:
+        """Получить пожертвования пользователя."""
+        query = select(Donation).where(Donation.user_id == user_id)
+        result = await session.execute(query)
+        return list(result.scalars().all())
+
 
 donation_crud = CRUDDonation(Donation)

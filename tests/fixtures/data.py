@@ -3,6 +3,8 @@ from datetime import datetime
 import pytest
 import pytest_asyncio
 
+from .user import superuser, user
+
 
 @pytest_asyncio.fixture
 async def charity_project(freezer, mixer):
@@ -85,6 +87,7 @@ async def donation(freezer, mixer):
     freezer.move_to('2011-11-11')
     donation = mixer.blend(
         'app.models.donation.Donation',
+        user_id=user.id,
         comment='To you for chimichangas',
         full_amount=100,
         create_date=datetime.now(),
@@ -98,6 +101,7 @@ async def another_donation(freezer, mixer):
     freezer.move_to('2012-12-12')
     donation = mixer.blend(
         'app.models.donation.Donation',
+        user_id=superuser.id,
         comment='From admin',
         full_amount=2000,
         create_date=datetime.now(),

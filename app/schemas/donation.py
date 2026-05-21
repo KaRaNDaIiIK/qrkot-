@@ -16,11 +16,14 @@ class DonationBase(BaseModel):
 class DonationCreate(DonationBase):
     """Схема для создания пожертвования."""
 
+    pass
+
 
 class DonationDB(DonationBase):
     """Схема для ответа."""
 
     id: int
+    user_id: int
     invested_amount: int = 0
     fully_invested: bool = False
     create_date: datetime

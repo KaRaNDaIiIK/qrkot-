@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +12,7 @@ from app.api.validators import (
     check_project_not_closed,
 )
 from app.core.db import get_async_session
+from app.core.user import current_superuser
 from app.crud.charity_project import charity_project_crud
 from app.schemas.charity_project import (
     CharityProjectCreate,
@@ -30,15 +31,22 @@ SessionDep = Annotated[AsyncSession, Depends(get_async_session)]
     response_model=CharityProjectDB,
     response_model_exclude_none=True,
     summary='Создать новый целевой проект',
+    dependencies=[Depends(current_superuser)],
 )
 async def create_charity_project(
     project: CharityProjectCreate,
     session: SessionDep,
 ) -> Any:
-    """Создаёт новый проект и автоматически распределяет пожертвования."""
+    """
+    Создаёт новый проект и автоматически распределяет пожертвования.
+    Только для суперюзеров.
+    """
     await check_project_name_duplicate(project.name, session)
 
-    new_project = await charity_project_crud.create(project, session)
+    new_project = await charity_project_crud.create(
+        project,
+        session,
+    )
 
     await invest(session)
 
@@ -56,7 +64,7 @@ async def create_charity_project(
 async def get_all_projects(
     session: SessionDep,
 ) -> Any:
-    """Возвращает список всех целевых проектов."""
+    """Возвращает список всех целевых проектов. Для всех."""
     projects = await charity_project_crud.get_multi(session)
     return projects
 
@@ -66,13 +74,14 @@ async def get_all_projects(
     response_model=CharityProjectDB,
     response_model_exclude_none=True,
     summary='Обновить целевой проект',
+    dependencies=[Depends(current_superuser)],
 )
 async def update_charity_project(
     project_id: int,
     project_update: CharityProjectUpdate,
     session: SessionDep,
 ) -> Any:
-    """Обновляет целевой проект."""
+    """Обновляет целевой проект. Только для суперюзеров."""
     project = await check_project_exists(project_id, session)
 
     await check_project_not_closed(project)
@@ -99,12 +108,16 @@ async def update_charity_project(
     response_model=CharityProjectDB,
     response_model_exclude_none=True,
     summary='Удалить целевой проект',
+    dependencies=[Depends(current_superuser)],
 )
 async def delete_charity_project(
     project_id: int,
     session: SessionDep,
 ) -> Any:
-    """Удаляет целевой проект (только незакрытый и без инвестиций)."""
+    """
+    Удаляет целевой проект (только незакрытый и без инвестиций).
+    Только для суперюзеров.
+    """
     project = await check_project_exists(project_id, session)
 
     await check_project_can_be_deleted(project)
