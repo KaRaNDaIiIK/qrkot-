@@ -17,8 +17,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.db import get_async_session
+from app.core.logger import get_logger
 from app.models import User
 from app.schemas import UserCreate
+
+
+MIN_PASSWORD_LENGTH = 3
+LIFETIME_SEC = 3600
+
+logger = get_logger(__name__)
 
 
 async def get_user_db(
@@ -32,7 +39,7 @@ bearer_transport = BearerTransport(tokenUrl='auth/jwt/login')
 
 def get_jwt_strategy() -> JWTStrategy:
     """Создает JWT стратегию аутентификации."""
-    return JWTStrategy(secret=settings.secret, lifetime_seconds=3600)
+    return JWTStrategy(secret=settings.secret, lifetime_seconds=LIFETIME_SEC)
 
 
 auth_backend = AuthenticationBackend(
@@ -43,7 +50,7 @@ auth_backend = AuthenticationBackend(
 
 
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
-    """класс пользователя с валидацией."""
+    """Класс пользователя с валидацией."""
 
     async def validate_password(  # type: ignore
         self,
@@ -54,15 +61,14 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         Валидация пользователя.
         Вернет None в случае успеха.
         """
-        if len(password) < 3:
-            error = 'Пароль должен содержать не менее 3 символов'
+        if len(password) < MIN_PASSWORD_LENGTH:
             raise InvalidPasswordException(
-                reason=error
+                reason=f'Пароль должен содержать не менее '
+                f'{MIN_PASSWORD_LENGTH} символов'
             )
         if user.email in password:
-            error = 'Пароль не может содержать ваш email'
             raise InvalidPasswordException(
-                reason=error
+                reason='Пароль не может содержать ваш email'
             )
 
     async def on_after_register(
@@ -71,7 +77,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         """
         Метод, описывающий действия после успешной регистрации пользователя.
         """
-        print(f'Пользователь {user.email} зарегистрирован.')
+        logger.info(f'Пользователь {user.email} зарегистрирован.')
 
 
 async def get_user_manager(user_db=Depends(get_user_db)):
