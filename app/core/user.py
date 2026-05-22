@@ -77,7 +77,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         """
         Метод, описывающий действия после успешной регистрации пользователя.
         """
-        logger.info(f'Пользователь {user.email} зарегистрирован.')
+        logger.info('Пользователь %s зарегистрирован.', user.email)
 
 
 async def get_user_manager(user_db=Depends(get_user_db)):

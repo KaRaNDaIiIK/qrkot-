@@ -32,9 +32,9 @@ async def create_user(
                             is_superuser=is_superuser
                         )
                     )
-        logger.info(f'Пользователь {email} создан')
+        logger.info('Пользователь %s создан', email)
     except UserAlreadyExists:
-        logger.warning(f'Пользователь {email} уже существует')
+        logger.warning('Пользователь %s уже существует', email)
 
 
 async def create_first_superuser():
