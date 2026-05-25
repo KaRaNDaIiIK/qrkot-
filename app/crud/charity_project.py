@@ -2,8 +2,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.crud.base import CRUDBase
-from app.models.charity_project import CharityProject
-from app.schemas.charity_project import CharityProjectUpdate
+from app.models import CharityProject
+from app.schemas import CharityProjectUpdate
 
 
 class CRUDCharityProject(CRUDBase):
@@ -57,6 +57,43 @@ class CRUDCharityProject(CRUDBase):
         await session.commit()
         await session.refresh(db_obj)
         return db_obj
+
+    async def get_projects_by_completion_rate(
+        self,
+        session: AsyncSession,
+    ) -> list[dict]:
+        """
+        Возвращает закрытые проекты, отсортированные по скорости сбора средств.
+        """
+        result = await session.execute(
+            select(CharityProject).where(
+                CharityProject.fully_invested.is_(True)
+            )
+        )
+        projects = result.scalars().all()
+
+        projects_with_duration = []
+        for project in projects:
+            # Вычисляем разницу
+            delta = project.close_date - project.create_date
+
+            projects_with_duration.append({
+                "id": project.id,
+                "name": project.name,
+                "duration": str(delta),
+                "duration_days": delta.days,
+                "description": project.description,
+                "full_amount": project.full_amount,
+                "invested_amount": project.invested_amount,
+                "create_date": project.create_date,
+                "close_date": project.close_date,
+            })
+
+        projects_with_duration.sort(
+            key=lambda x: x["duration_days"]  # type: ignore
+        )
+
+        return projects_with_duration  # type: ignore
 
 
 charity_project_crud = CRUDCharityProject(CharityProject)

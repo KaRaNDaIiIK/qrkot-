@@ -8,17 +8,26 @@ DONATON_DETAILS_URL = DONATIONS_URL + '{donation_id}'
 MY_DONATIONS_URL = DONATIONS_URL + 'my'
 
 
-def test_create_donation(user_client):
-    json_data = {'full_amount': 5, 'comment': 'To you for chimichangas'}
+@pytest.mark.parametrize(
+    'json_data', (
+        {'full_amount': 5, 'comment': 'To you for chimichangas'},
+        {'full_amount': 10},
+    )
+)
+def test_create_donation(user_client, json_data):
     response = user_client.post(DONATIONS_URL, json=json_data)
     assert response.status_code == 200, (
         'Корректный POST-запрос зарегистрированного пользователя к эндпоинту '
-        f'`{DONATIONS_URL}` должен возвращать ответ со статус-кодом 200.'
+        f'`{DONATIONS_URL}` должен возвращать ответ со статус-кодом 200.\n'
+        f'Был отправлен запрос с телом `{json_data}`. Полученный код ответа: '
+        f'{response.status_code}.'
     )
     data = response.json()
     missing_keys = (
         {'full_amount', 'id', 'create_date', 'comment'} - data.keys()
     )
+    if 'comment' not in json_data:
+        missing_keys.remove('comment')
     assert not missing_keys, (
         'В ответе на POST-запрос зарегистрированного пользователя к '
         f'эндпоинту `{DONATIONS_URL}` не хватает следующих ключей: '
