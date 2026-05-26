@@ -4,34 +4,28 @@ from datetime import datetime
 from aiogoogle import Aiogoogle
 
 from app.core.config import settings
+from app.services.constants import (
+    SPREADSHEET_BODY,
+    PERMISSIONS_BODY,
+    TABLE_HEADERS,
+    UPDATE_CONFIG,
+    DATE_FORMAT
+)
 
 
 logger = logging.getLogger(__name__)
-FORMAT = "%Y/%m/%d %H:%M:%S"
 
 
 async def create_spreadsheets(wrapper_services: Aiogoogle) -> str:
     """Создает новую Google таблицу для отчета."""
-    now_date_time = datetime.now().strftime(FORMAT)
+    now_date_time = datetime.now().strftime(DATE_FORMAT)
     service = await wrapper_services.discover('sheets', 'v4')
 
-    spreadsheet_body = {
-        'properties': {
-            'title': f'Отчёт по проектам на {now_date_time}',
-            'locale': 'ru_RU'
-        },
-        'sheets': [{
-            'properties': {
-                'sheetType': 'GRID',
-                'sheetId': 0,
-                'title': settings.sheet_name,
-                'gridProperties': {
-                    'rowCount': 100,
-                    'columnCount': 11
-                }
-            }
-        }]
-    }
+    spreadsheet_body = SPREADSHEET_BODY.copy()
+    spreadsheet_body['properties']['title'] = (
+        f'Отчёт по проектам на {now_date_time}'
+    )
+    spreadsheet_body['sheets'][0]['properties']['title'] = settings.sheet_name
 
     response = await wrapper_services.as_service_account(
         service.spreadsheets.create(
@@ -47,11 +41,8 @@ async def set_user_permissions(
     wrapper_services: Aiogoogle
 ) -> None:
     """Выдает права на редактирование таблицы пользователю из настроек."""
-    permissions_body = {
-        'type': 'user',
-        'role': 'writer',
-        'emailAddress': settings.email
-    }
+    permissions_body = PERMISSIONS_BODY.copy()
+    permissions_body['emailAddress'] = settings.email
     service = await wrapper_services.discover('drive', 'v3')
 
     await wrapper_services.as_service_account(
@@ -71,17 +62,14 @@ async def update_spreadsheets_value(
     """Обновляет данные в Google таблице."""
     logger.info(f"Начало обновления таблицы {spreadsheet_id}")
     logger.info(f"Количество проектов для записи: {len(projects)}")
-    now_date_time = datetime.now().strftime(FORMAT)
+    now_date_time = datetime.now().strftime(DATE_FORMAT)
     service = await wrapper_services.discover('sheets', 'v4')
 
     sheet_name = getattr(settings, 'sheet_name', 'Отчет')
     update_range = f"{sheet_name}!A1:E30"
 
-    table_values = [
-        ['Отчёт от', now_date_time],
-        ['Топ проектов по скорости закрытия'],
-        ['№', 'Название проекта', 'Время сбора', 'Описание']
-    ]
+    table_values = [row.copy() for row in TABLE_HEADERS]
+    table_values[0][1] = now_date_time
 
     for idx, project in enumerate(projects, 1):
         new_row = [
@@ -93,7 +81,7 @@ async def update_spreadsheets_value(
         table_values.append(new_row)
 
     update_body = {
-        'majorDimension': 'ROWS',
+        'majorDimension': UPDATE_CONFIG['majorDimension'],
         'values': table_values
     }
 
